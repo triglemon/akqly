@@ -51,9 +51,9 @@ class Sentence:
             index += len(clause_words)
         # Debugging
         for clause in self.clauses:
-             print(clause.string)
-             print(clause.tags)
-             print(clause.type)
+            print(clause.string)
+            print(clause.tags)
+            print(clause.type)
 
     """
     Model 1
