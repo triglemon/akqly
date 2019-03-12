@@ -70,7 +70,7 @@ class Sentence:
             tag = self.tags[self.pos]
             return tag
         except IndexError:
-            return False
+            return None
 
     # Main mapping method to check for various types of clauses (right now
     # only prepositions are accounted for)
