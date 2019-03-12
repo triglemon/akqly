@@ -22,6 +22,7 @@ class Node:
     def __init__(self, cargo=None, parents=None):
         self.cargo = cargo
         self.daughters = []
+        self.parents = parents
         for parent in parents:
             parent.add_daughter(self)
 
@@ -29,52 +30,12 @@ class Node:
         self.daughters.append(daughter)
 
 
-class ClauseTree:
-    def __init__(self):
-        preposition_1 = Node(PREPOSITION)
-        determiner_1 = Node(DETERMINER, [preposition_1])
-        adjective_1 = Node(ADJECTIVE, [determiner_1])
-        noun_1 = Node(ADJECTIVE, [adjective_1])
-        pronoun_1 = Node(PRONOUN, [preposition_1])
-        verb = Node(VERB, [noun_1, pronoun_1])
-        preposition_2 = Node(PREPOSITION, [verb])
-        determiner_2 = Node(DETERMINER, [preposition_2])
-        adjective_2 = Node(ADJECTIVE, [determiner_2])
-        noun_2 = Node(ADJECTIVE, [adjective_2])
-        pronoun_2 = Node(PRONOUN, [preposition_2])
-
-        self.head = preposition_1
-        self.tails = [noun_2, pronoun_2]
-
-
 class Clause:
     def __init__(self):
-        self.pattern = (PREPOSITION,
-                        DETERMINER,
-                        ADJECTIVE,
-                        NOUN,
-                        PRONOUN,
-                        ADVERB,
-                        VERB,
-                        PREPOSITION,
-                        DETERMINER,
-                        ADJECTIVE,
-                        NOUN,
-                        PRONOUN,
-                        ADVERB,
-                        ADJECTIVE)
         self.tags = []
-        self.pos = 0
 
     def __str__(self):
         return " ".join([tag[0] for tag in self.tags])
-
-    def tag_iterate(self):
-        try:
-            tag = self.pattern[self.pos]
-            return tag
-        except IndexError:
-            return None
 
 
 class Sentence:
@@ -85,28 +46,62 @@ class Sentence:
         self.pos = 0
         self.clauses = []
 
-    def tag_iterate(self):
+    def iterate(self):
         try:
             tag = self.tags[self.pos]
             return tag
         except IndexError:
             return None
 
-    def process(self):
-        clause = Clause()
+class ClauseGraph:
+    def __init__(self):
+        preposition_1 = Node(PREPOSITION)
+        determiner_1 = Node(DETERMINER, [preposition_1])
+        adjective_1 = Node(ADJECTIVE, [determiner_1])
+        noun_1 = Node(ADJECTIVE, [adjective_1])
+        pronoun_1 = Node(PRONOUN, [preposition_1])
+        adverb_1 = Node(ADVERB, [noun_1, pronoun_1])
+        verb = Node(VERB, [adverb_1])
+        preposition_2 = Node(PREPOSITION, [verb])
+        determiner_2 = Node(DETERMINER, [preposition_2])
+        adjective_2 = Node(ADJECTIVE, [determiner_2])
+        noun_2 = Node(NOUN, [adjective_2])
+        pronoun_2 = Node(PRONOUN, [preposition_2])
+        adverb_2 = Node(ADVERB, [preposition_2])
+        adjective_3 = Node(ADJECTIVE, [adverb_2])
+
+        self.head = self.current = preposition_1
+        self.tails = [noun_2, pronoun_2, adjective_3]
+        self.clause = []
+
+    def clause(self):
+        old_clause = self.clause
+        self.clause = []
+        return old_clause
+"""FIX"""
+    def iterate(self):
+        self.current = self.current.daughters
+        return
+        elif len(self.current.daughters) == 1:
+            self.current = self.current.daughters[0]
+        else:
+
+"""FIX"""
+    def process(self, sentence):
+        sentence = Sentence(sentence)
         while True:
-            sentence_tag = self.tag_iterate()
-            clause_tags = clause.tag_iterate()
+            sentence_tag = sentence.iterate()
             if not sentence_tag:
-                self.clauses.append(clause)
+                sentence.clauses.append(self.clause)
                 return
+            self.iterate()
+
             if not clause_tags:
                 self.clauses.append(clause)
                 clause = Clause()
                 clause_tags = clause.tag_iterate()
-            if sentence_tag[1] in clause_tags.tags:
-                clause.tags.append(sentence_tag)
-                self.pos += 1
+            if tag[1] in self.current.cargo.tags:
+                self.clause.tags.append(tag)
             else:
                 clause.pos += 1
 
@@ -114,19 +109,21 @@ class Sentence:
         for clause in self.clauses:
             print(clause.tags)
 
-
 # Parse sentences in string
 def parse_sentences(string):
     txt = TextBlob(string)
     for sentence in txt.sentences:
-        s_map = Sentence(sentence)
-        s_map.process()
-        s_map.regurg()
+        ClauseGraph.process(sentence)
+
+
+clause_graph = ClauseGraph()
+
 
 def main():
     with open('notes2', encoding="utf8") as file:
         notes = file.read()
     parse_sentences(notes)
+
 
 if __name__ == '__main__':
     main()
