@@ -9,25 +9,6 @@ class WordType:
         self.recursive = recursive
 
 
-class Node:
-    def __init__(self, cargo=None, parent=None):
-        self.cargo = cargo
-        self.daughters = []
-        parent.add_daughter(self)
-
-    def add_daughter(self, daughter):
-        self.daughters.append(daughter)
-
-
-class ClauseTree:
-    def __init__(self):
-        preposition = Node(PREPOSITION)
-        determiner = Node(DETERMINER, preposition)
-        adjective = Node(ADJECTIVE, determiner)
-        noun = Node(ADJECTIVE, adjective)
-        pronoun = Node (PRONOUN, preposition)
-
-
 NOUN = WordType(('NN', 'NNS', 'NNP', 'NNPS'), True)
 PRONOUN = WordType(('PRP',))
 ADJECTIVE = WordType(('JJ', 'JJR', 'JJS', 'PRP$'), True)
@@ -35,6 +16,35 @@ PREPOSITION = WordType(('IN',))
 DETERMINER = WordType(('PDT', 'DT'), True)
 VERB = WordType(('VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',), True)
 ADVERB = WordType(('RB', 'RBR', 'RBS', 'WRB'), True)
+
+
+class Node:
+    def __init__(self, cargo=None, parents=None):
+        self.cargo = cargo
+        self.daughters = []
+        for parent in parents:
+            parent.add_daughter(self)
+
+    def add_daughter(self, daughter):
+        self.daughters.append(daughter)
+
+
+class ClauseTree:
+    def __init__(self):
+        preposition_1 = Node(PREPOSITION)
+        determiner_1 = Node(DETERMINER, [preposition_1])
+        adjective_1 = Node(ADJECTIVE, [determiner_1])
+        noun_1 = Node(ADJECTIVE, [adjective_1])
+        pronoun_1 = Node(PRONOUN, [preposition_1])
+        verb = Node(VERB, [noun_1, pronoun_1])
+        preposition_2 = Node(PREPOSITION, [verb])
+        determiner_2 = Node(DETERMINER, [preposition_2])
+        adjective_2 = Node(ADJECTIVE, [determiner_2])
+        noun_2 = Node(ADJECTIVE, [adjective_2])
+        pronoun_2 = Node(PRONOUN, [preposition_2])
+
+        self.head = preposition_1
+        self.tails = [noun_2, pronoun_2]
 
 
 class Clause:
@@ -49,7 +59,7 @@ class Clause:
                         PREPOSITION,
                         DETERMINER,
                         ADJECTIVE,
-                        NOUN, 
+                        NOUN,
                         PRONOUN,
                         ADVERB,
                         ADJECTIVE)
