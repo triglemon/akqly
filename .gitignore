@@ -3,3 +3,5 @@ venv/
 .idea/dictionaries/Rob.xml
 .idea/misc.xml
 .idea/vcs.xml
+__pycache__/
+*.pyc
