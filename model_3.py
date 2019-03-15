@@ -112,7 +112,7 @@ class ClauseGraph:
 
 def main():
     clause_graph = ClauseGraph()
-    with open('notes2', encoding="utf8") as file:
+    with open('comparison_notes', encoding="utf8") as file:
         notes = file.read()
     txt = TextBlob(notes)
     for sentence in txt.sentences:
