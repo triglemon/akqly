@@ -10,7 +10,7 @@ class WordType:
 
 
 NOUN = WordType(('NN', 'NNS', 'NNP', 'NNPS'), True)
-PRONOUN = WordType(('PRP',))
+PRONOUN = WordType(('PRP',), True)
 ADJECTIVE = WordType(('JJ', 'JJR', 'JJS', 'PRP$'), True)
 PREPOSITION = WordType(('IN',))
 DETERMINER = WordType(('PDT', 'DT'), True)
@@ -19,16 +19,19 @@ ADVERB = WordType(('RB', 'RBR', 'RBS', 'WRB'), True)
 
 
 class Node:
-    def __init__(self, cargo=None, parents=None):
+    def __init__(self, cargo=None, parents=None, empty=False):
         self.cargo = cargo
         self.daughters = []
         self.parents = parents
-        if parents:
+        if not empty:
             for parent in parents:
                 parent.add_daughter(self)
+            if self.cargo.recursive:
+                self.add_daughter(self)
 
     def add_daughter(self, daughter):
-        self.daughters.append(daughter)
+        if daughter not in self.daughters:
+            self.daughters.append(daughter)
 
 
 class Clause:
@@ -47,6 +50,9 @@ class Sentence:
         self.pos = 0
         self.clauses = []
 
+    def increment(self):
+        self.pos += 1
+
     def iterate(self):
         try:
             tag = self.tags[self.pos]
@@ -57,14 +63,14 @@ class Sentence:
 
 class ClauseGraph:
     def __init__(self):
-        self.head = self.current = Node()
+        self.head = self.current = Node(empty=True)
         preposition_1 = Node(PREPOSITION, [self.head])
         determiner_1 = Node(DETERMINER, [self.head, preposition_1])
         adjective_1 = Node(ADJECTIVE, [self.head, preposition_1, determiner_1])
-        noun_1 = Node(ADJECTIVE, [self.head, preposition_1, determiner_1, adjective_1])
+        noun_1 = Node(NOUN, [self.head, adjective_1, preposition_1, determiner_1, ])
         pronoun_1 = Node(PRONOUN, [self.head, preposition_1])
         adverb_1 = Node(ADVERB, [self.head, noun_1, pronoun_1])
-        verb = Node(VERB, [self.head, noun_1, pronoun_1, adverb_1])
+        verb = Node(VERB, [self.head, preposition_1, noun_1, pronoun_1, adverb_1])
         preposition_2 = Node(PREPOSITION, [verb, noun_1, ])
         determiner_2 = Node(DETERMINER, [verb, preposition_2])
         adjective_2 = Node(ADJECTIVE, [verb, preposition_2, determiner_2])
@@ -72,63 +78,45 @@ class ClauseGraph:
         pronoun_2 = Node(PRONOUN, [verb, preposition_2])
         adverb_2 = Node(ADVERB, [verb, noun_2, preposition_2])
         adjective_3 = Node(ADJECTIVE, [verb, noun_2, adverb_2])
-
-        self.tails = [noun_2, pronoun_2, adjective_3]
         self.clause = []
 
-    def clause(self):
+    def regurg(self):
         old_clause = self.clause
+        print(old_clause)
         self.clause = []
+        self.current = self.head
         return old_clause
 
-
-"""FIX
-    def iterate(self):
-        self.current = self.current.daughters
-        return
-        elif len(self.current.daughters) == 1:
-            self.current = self.current.daughters[0]
-        else:
-
+    def newde(self, node):
+        self.current = node
 
     def process(self, sentence):
         sentence = Sentence(sentence)
         while True:
             sentence_tag = sentence.iterate()
             if not sentence_tag:
-                sentence.clauses.append(self.clause)
-                return
-            self.iterate()
-
-            if not clause_tags:
-                self.clauses.append(clause)
-                clause = Clause()
-                clause_tags = clause.tag_iterate()
-            if tag[1] in self.current.cargo.tags:
-                self.clause.tags.append(tag)
+                sentence.clauses.append(self.regurg())
+                return sentence
+            successor = False
+            for node in self.current.daughters:
+                if sentence_tag[1] in node.cargo.tags:
+                    self.clause.append(sentence_tag)
+                    self.newde(node)
+                    successor = True
+                    break
+            if not successor:
+                sentence.clauses.append(self.regurg())
             else:
-                clause.pos += 1
-
-    def regurg(self):
-        for clause in self.clauses:
-            print(clause.tags)
-"""
-
-
-# Parse sentences in string
-def parse_sentences(string):
-    txt = TextBlob(string)
-    for sentence in txt.sentences:
-        ClauseGraph.process(sentence)
-
-
-clause_graph = ClauseGraph()
+                sentence.increment()
 
 
 def main():
+    clause_graph = ClauseGraph()
     with open('notes2', encoding="utf8") as file:
         notes = file.read()
-    parse_sentences(notes)
+    txt = TextBlob(notes)
+    for sentence in txt.sentences:
+        print(clause_graph.process(sentence).clauses)
 
 
 if __name__ == '__main__':
